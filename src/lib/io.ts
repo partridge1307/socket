@@ -7,13 +7,13 @@ declare global {
 }
 
 let socket;
-if (process.env.NODE_ENV === 'production') {
+if (process.env.ENV === 'production') {
   socket = new Server({
     cors: {
       origin: process.env.URL,
     },
   });
-} else {
+} else if (process.env.ENV === 'development') {
   if (!global.cachedIo) {
     global.cachedIo = new Server({
       cors: {
@@ -22,6 +22,6 @@ if (process.env.NODE_ENV === 'production') {
     });
   }
   socket = global.cachedIo;
-}
+} else throw Error('Not found ENV');
 
 export const io = socket;
