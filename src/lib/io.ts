@@ -1,6 +1,4 @@
 import { Server } from 'socket.io';
-import { config } from 'dotenv';
-config();
 
 declare global {
   var cachedIo: Server;
@@ -11,6 +9,7 @@ if (process.env.ENV === 'production') {
   socket = new Server({
     cors: {
       origin: process.env.URL,
+      methods: ['GET', 'POST'],
     },
   });
 } else if (process.env.ENV === 'development') {
@@ -18,6 +17,7 @@ if (process.env.ENV === 'production') {
     global.cachedIo = new Server({
       cors: {
         origin: process.env.URL,
+        methods: ['GET', 'POST'],
       },
     });
   }

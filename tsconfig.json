@@ -10,11 +10,6 @@
     "skipLibCheck": true,
     "declaration": true,
     "noEmit": true,
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
     "typeRoots": [
       "node_modules/@types",
       "./src/types/*"
