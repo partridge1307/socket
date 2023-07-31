@@ -1,8 +1,13 @@
 let onlineUsers: { socketId: string; userId: string }[] = [];
 
 const handleUserConnect = (socketId: string, userId: string) => {
-  !onlineUsers.some((user) => user.userId === userId) &&
-    onlineUsers.push({ socketId, userId });
+  const existUser = findUserByUserId(userId);
+
+  if (existUser) onlineUsers[onlineUsers.indexOf(existUser)].userId = userId;
+  else {
+    !onlineUsers.some((user) => user.userId === userId) &&
+      onlineUsers.push({ socketId, userId });
+  }
 };
 
 const handleUserDisconnect = (socketId: string) => {
