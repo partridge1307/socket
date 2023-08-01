@@ -4,22 +4,30 @@ import { db } from '../lib/db';
 import { findUserByUserId } from './user';
 import { io } from '../lib/io';
 
+type DataProps = {
+  id: number;
+} & GeneralProps;
+
+type GeneralProps = {
+  notifyType: notifyType.LIKE | notifyType.COMMENT | notifyType.MENTION;
+  mangaId: number;
+  chapterId: number | null;
+};
+
 const sendNotifyToOnlineUser = (
   targetUserId: string,
   fromUser: Pick<User, 'name'>,
-  type: notifyType,
-  data: { id: number; mangaId?: number; chapterId?: number | null }
+  data: DataProps
 ) => {
   const targetOnlineUser = findUserByUserId(targetUserId);
   if (!targetOnlineUser) return;
 
   if (
-    type === notifyType.LIKE ||
-    type === notifyType.COMMENT ||
-    type === notifyType.MENTION
+    data.notifyType ===
+    (notifyType.LIKE || notifyType.COMMENT || notifyType.MENTION)
   ) {
     io.to(targetOnlineUser.socketId).emit('notify', {
-      type,
+      type: data.notifyType,
       data: {
         id: data.id,
         fromUser: fromUser,
@@ -75,9 +83,8 @@ const createGeneralNotify = async (
     });
 
     if (
-      data.type === notifyType.LIKE ||
-      data.type === notifyType.COMMENT ||
-      data.type === notifyType.MENTION
+      data.type ===
+      (notifyType.LIKE || notifyType.COMMENT || notifyType.MENTION)
     ) {
       if (existNotify.some((noti) => noti.type === data.type)) return;
 
@@ -94,10 +101,11 @@ const createGeneralNotify = async (
         },
       });
 
-      return sendNotifyToOnlineUser(comment.authorId, fromUser, data.type, {
+      return sendNotifyToOnlineUser(comment.authorId, fromUser, {
         id: createdNotify.id,
         mangaId: comment.mangaId,
         chapterId: comment.chapterId,
+        notifyType: data.type,
       });
     }
   } catch (error) {

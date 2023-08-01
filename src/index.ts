@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { handleMessage } from './controller/message';
 import { createGeneralNotify } from './controller/notify';
 import {
   findUserBySocketId,
@@ -41,6 +42,17 @@ io.on('connection', (socket) => {
           return;
       }
     }
+  );
+
+  socket.on(
+    'message',
+    ({
+      content,
+      conversationId,
+    }: {
+      content: string;
+      conversationId: number;
+    }) => handleMessage(content, conversationId)
   );
 });
 
