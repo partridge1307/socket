@@ -30,18 +30,20 @@ const handleMessage = async (content: string, conversationId: number) => {
         };
     });
 
-    usersSocketId.map((user) => {
-      if (user) {
-        const dbUser = user.user;
+    usersSocketId
+      .filter((userSocket) => typeof userSocket !== 'undefined')
+      .map((user) => {
+        if (user) {
+          const dbUser = user.user;
 
-        io.to(user.socketId).emit('message', {
-          content,
-          sender: {
-            ...dbUser,
-          },
-        });
-      }
-    });
+          io.to(user.socketId).emit('message', {
+            content,
+            sender: {
+              ...dbUser,
+            },
+          });
+        }
+      });
   } catch (error) {
     console.log(error);
   }

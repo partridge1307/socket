@@ -31,10 +31,12 @@ model User {
   follows       User[]         @relation("followTo")
   badge         Badge[]        @relation("BadgeToUser")
   conversation  Conversation[] @relation("ConversationToUser")
+  history       History[]
+  mangaFollow   MangaFollow[]
 
   @@index([followToId])
   @@index([email], type: Hash)
-  @@index([name], type: Hash)
+  @@index([name])
 }
 
 model MemberOnTeam {
@@ -72,8 +74,9 @@ model Badge {
 model Manga {
   id           Int           @id @default(autoincrement())
   name         String
-  description  Json
   image        String
+  description  Json
+  review       String?
   facebookLink String?
   discordLink  String?
   creatorId    String
@@ -86,9 +89,22 @@ model Manga {
   view         View?
   author       MangaAuthor[] @relation("MangaToMangaAuthor")
   tags         Tag[]         @relation("MangaToTag")
+  history      History[]
+  mangaFollow  MangaFollow[]
 
   @@unique([name, creatorId])
   @@index([creatorId])
+  @@index([isPublished], type: Hash)
+}
+
+model MangaFollow {
+  mangaId Int
+  userId  String
+  manga   Manga  @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mangaId, userId])
+  @@index([mangaId, userId])
 }
 
 model MangaAuthor {
@@ -118,7 +134,7 @@ model Chapter {
   isPublished  Boolean      @default(false)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  manga        Manga        @relation(fields: [mangaId], references: [id])
+  manga        Manga        @relation(fields: [mangaId], references: [id], onDelete: Cascade)
   team         Team?        @relation(fields: [teamId], references: [id])
   comment      Comment[]
   dailyView    DailyView[]
@@ -126,6 +142,7 @@ model Chapter {
 
   @@index([mangaId])
   @@index([teamId])
+  @@index([isPublished], type: Hash)
 }
 
 model Comment {
@@ -166,7 +183,7 @@ model View {
   mangaId    Int          @id
   totalView  Int
   dailyView  DailyView[]
-  manga      Manga        @relation(fields: [mangaId], references: [id])
+  manga      Manga        @relation(fields: [mangaId], references: [id], onDelete: Cascade)
   weeklyView WeeklyView[]
 
   @@index([mangaId])
@@ -177,7 +194,7 @@ model DailyView {
   mangaId   Int
   chapterId Int
   createdAt DateTime @default(now())
-  chapter   Chapter  @relation(fields: [chapterId], references: [id])
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   view      View     @relation(fields: [mangaId], references: [mangaId], onDelete: Cascade)
 
   @@index([mangaId])
@@ -189,7 +206,7 @@ model WeeklyView {
   mangaId   Int
   chapterId Int
   createdAt DateTime @default(now())
-  chapter   Chapter  @relation(fields: [chapterId], references: [id])
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   view      View     @relation(fields: [mangaId], references: [mangaId])
 
   @@index([mangaId])
@@ -224,11 +241,25 @@ model Message {
   conversationId Int
   senderId       String
   createdAt      DateTime     @default(now())
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([senderId])
+}
+
+model History {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  mangaId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manga     Manga    @relation(fields: [mangaId], references: [id])
+
+  @@unique([userId, mangaId])
+  @@index([userId])
+  @@index([mangaId])
 }
 
 enum VoteType {
