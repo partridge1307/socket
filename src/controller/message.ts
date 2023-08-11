@@ -2,7 +2,15 @@ import { db } from '../lib/db';
 import { io } from '../lib/io';
 import { findUserByUserId } from './user';
 
-const handleMessage = async (content: string, conversationId: number) => {
+const handleMessage = async ({
+  content,
+  conversationId,
+  senderId,
+}: {
+  content: string;
+  conversationId: number;
+  senderId: string;
+}) => {
   try {
     const usersInConversation = await db.conversation.findFirstOrThrow({
       where: {
@@ -20,30 +28,32 @@ const handleMessage = async (content: string, conversationId: number) => {
       },
     });
 
-    const usersSocketId = usersInConversation.users.map((user) => {
-      const onlineUser = findUserByUserId(user.id);
-
-      if (onlineUser)
-        return {
-          socketId: onlineUser.socketId,
-          user,
-        };
-    });
-
-    usersSocketId
-      .filter((userSocket) => typeof userSocket !== 'undefined')
+    const usersSocketId = usersInConversation.users
       .map((user) => {
-        if (user) {
-          const dbUser = user.user;
+        const onlineUser = findUserByUserId(user.id);
 
-          io.to(user.socketId).emit('message', {
-            content,
-            sender: {
-              ...dbUser,
-            },
-          });
-        }
-      });
+        if (onlineUser)
+          return {
+            socketId: onlineUser.socketId,
+            user,
+          };
+      })
+      .filter((userSocket) => typeof userSocket !== 'undefined');
+
+    const sender = usersSocketId.find(
+      (user) => user?.user.id === senderId
+    )?.user;
+
+    usersSocketId.map((user) => {
+      if (user) {
+        io.to(user.socketId).emit('message', {
+          content,
+          sender: {
+            ...sender,
+          },
+        });
+      }
+    });
   } catch (error) {
     console.log(error);
   }

@@ -44,16 +44,7 @@ io.on('connection', (socket) => {
     }
   );
 
-  socket.on(
-    'message',
-    ({
-      content,
-      conversationId,
-    }: {
-      content: string;
-      conversationId: number;
-    }) => handleMessage(content, conversationId)
-  );
+  socket.on('message', (payload) => handleMessage(payload));
 });
 
 io.listen(process.env.PORT);
