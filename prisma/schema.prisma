@@ -77,6 +77,7 @@ model Manga {
   image        String
   description  Json
   review       String?
+  altName      String?
   facebookLink String?
   discordLink  String?
   creatorId    String
