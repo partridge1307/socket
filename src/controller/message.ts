@@ -46,7 +46,7 @@ const handleMessage = async ({
 
     usersSocketId.map((user) => {
       if (user) {
-        io.to(user.socketId).emit('message', {
+        io.to(user.socketId).emit(`message:${conversationId}`, {
           content,
           sender: {
             ...sender,
