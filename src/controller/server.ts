@@ -123,12 +123,10 @@ const postChapterNotify = async (req: Request, res: Response) => {
       ? `${process.env.URL}/chapter/${id}\n<@&${roleId}>`
       : `${process.env.URL}/chapter/${id}`;
 
-    await Promise.all([
-      targetChannel.send({
-        embeds: [embed],
-      }),
-      targetChannel.send(content),
-    ]);
+    await targetChannel.send({
+      content,
+      embeds: [embed],
+    });
 
     return res.send('OK');
   } catch (error) {
