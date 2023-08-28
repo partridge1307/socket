@@ -12,22 +12,20 @@ const getAllChannelsCanSend = async (req: Request, res: Response) => {
   const guild = client.guilds.cache.get(id);
   if (!guild) return res.status(404).send('Not found');
 
+  const user = await guild.members.fetch(userId);
+  if (!user.permissions.has(PermissionsBitField.Flags.ManageGuild))
+    return res.status(422).send('Invalid');
+
   const roles = guild.roles.cache.filter((role) => role.mentionable);
 
-  const textChannelsCanSend = (
-    await Promise.all(
-      guild.channels.cache.map(async (c) => {
-        const botCanSendMessage = c
-          .permissionsFor(c.client.user)
-          ?.has(PermissionsBitField.Flags.SendMessages);
-        const isManager = (await c.guild.members.fetch(userId))
-          .permissionsIn(c)
-          .has(PermissionsBitField.Flags.ManageChannels);
+  const textChannelsCanSend = guild.channels.cache.filter((c) => {
+    const botCanSendMessage = c
+      .permissionsFor(c.client.user)
+      ?.has(PermissionsBitField.Flags.SendMessages);
 
-        if (botCanSendMessage && isManager) return c;
-      })
-    )
-  ).filter((c) => c instanceof TextChannel) as TextChannel[];
+    if (botCanSendMessage && c instanceof TextChannel) return true;
+    else return false;
+  });
 
   return res.json({
     channels: textChannelsCanSend.map((c) => ({ id: c.id, name: c.name })),
@@ -104,7 +102,7 @@ const postChapterNotify = async (req: Request, res: Response) => {
       })
       .setTitle(targetChapter.manga.name)
       .setDescription(
-        `Vol. ${targetChapter.volume} Ch. ${targetChapter.chapterIndex} của ${targetChapter.manga.name} đã ra mắt`
+        `Vol. ${targetChapter.volume} Ch. ${targetChapter.chapterIndex} của \*\*${targetChapter.manga.name}\*\* đã ra mắt`
       )
       .addFields([
         {
