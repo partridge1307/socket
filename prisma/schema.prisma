@@ -8,58 +8,99 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//User
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionToken])
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model VerifyList {
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([userId])
+  @@index([userId])
+}
+
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  password      String
-  name          String?        @unique(sort: Asc) @db.VarChar(255)
-  image         String?
-  banner        String?
-  color         Json?
-  verified      Boolean        @default(false)
-  followToId    String?
-  createAt      DateTime       @default(now())
-  comment       Comment[]
-  commentVote   CommentVote[]
-  manga         Manga[]
-  memberOnTeam  MemberOnTeam?
-  messages      Message[]
-  notifySent    Notify[]       @relation("fromUser")
-  notifications Notify[]       @relation("toUser")
-  owner         Team?
-  followTo      User?          @relation("followTo", fields: [followToId], references: [id])
-  follows       User[]         @relation("followTo")
-  badge         Badge[]        @relation("BadgeToUser")
-  conversation  Conversation[] @relation("ConversationToUser")
-  history       History[]
-  mangaFollow   MangaFollow[]
+  id              String            @id @default(cuid())
+  email           String            @unique
+  password        String
+  role            Role              @default(USER)
+  name            String?           @unique(sort: Asc)
+  image           String?
+  banner          String?
+  color           Json?
+  verified        Boolean           @default(false)
+  emailVerified   DateTime?
+  followToId      String?
+  isBanned        Boolean           @default(false)
+  muteExpires     DateTime?
+  createdAt       DateTime          @default(now())
+  subForum        SubForum[]
+  subscription    Subscription[]
+  post            Post[]
+  comment         Comment[]
+  commentVote     CommentVote[]
+  manga           Manga[]
+  memberOnTeam    MemberOnTeam?
+  messages        Message[]
+  notifySent      Notify[]          @relation("fromUser")
+  notifications   Notify[]          @relation("toUser")
+  owner           Team?
+  followTo        User?             @relation("followTo", fields: [followToId], references: [id])
+  follows         User[]            @relation("followTo")
+  badge           Badge[]           @relation("BadgeToUser")
+  conversation    Conversation[]    @relation("ConversationToUser")
+  history         History[]
+  mangaFollow     MangaFollow[]
+  isWaitVeify     VerifyList?
+  session         Session[]
+  teamJoinRequest TeamJoinRequest?
+  postComment     PostComment[]
+  postVote        PostVote[]
+  postCommentVote PostCommentVote[]
+  account         Account[]
 
   @@index([followToId])
   @@index([email], type: Hash)
   @@index([name])
-}
-
-model MemberOnTeam {
-  userId String @unique
-  teamId Int
-  team   Team   @relation(fields: [teamId], references: [id])
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, teamId])
-  @@index([teamId])
-}
-
-model Team {
-  id        Int            @id @default(autoincrement())
-  image     String?
-  name      String         @unique
-  ownerId   String         @unique
-  chapter   Chapter[]
-  member    MemberOnTeam[]
-  owner     User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  createdAt DateTime       @default(now())
-
-  @@index([ownerId])
 }
 
 model Badge {
@@ -71,12 +112,78 @@ model Badge {
   user        User[] @relation("BadgeToUser")
 }
 
+model Notify {
+  id         Int        @id @default(autoincrement())
+  type       NotifyType
+  fromUserId String
+  toUserId   String
+  content    Json
+  isRead     Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  fromUser   User       @relation("fromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser     User       @relation("toUser", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([fromUserId])
+  @@index([toUserId])
+}
+
+// Team
+
+model MemberOnTeam {
+  userId String @unique
+  teamId Int
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model TeamJoinRequest {
+  id        Int      @id @default(autoincrement())
+  userId    String   @unique
+  teamId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  team      Team     @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@index([teamId])
+}
+
+model Team {
+  id              Int               @id @default(autoincrement())
+  image           String
+  name            String            @unique
+  description     String
+  ownerId         String            @unique
+  createdAt       DateTime          @default(now())
+  chapter         Chapter[]
+  member          MemberOnTeam[]
+  owner           User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  teamJoinRequest TeamJoinRequest[]
+
+  @@index([ownerId])
+}
+
+// Manga
+
+model Tag {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String
+  category    String
+  manga       Manga[] @relation("MangaToTag")
+}
+
 model Manga {
   id           Int           @id @default(autoincrement())
   name         String
   image        String
   description  Json
-  review       String?
+  review       String
   altName      String?
   facebookLink String?
   discordLink  String?
@@ -116,17 +223,9 @@ model MangaAuthor {
   @@index([name])
 }
 
-model Tag {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
-  description String
-  category    String
-  manga       Manga[] @relation("MangaToTag")
-}
-
 model Chapter {
   id           Int          @id @default(autoincrement())
-  chapterIndex Int          @default(1)
+  chapterIndex Float        @default(1)
   name         String?
   images       String[]
   volume       Int
@@ -157,7 +256,7 @@ model Comment {
   createdAt DateTime      @default(now())
   author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
   chapter   Chapter?      @relation(fields: [chapterId], references: [id])
-  manga     Manga         @relation(fields: [mangaId], references: [id])
+  manga     Manga         @relation(fields: [mangaId], references: [id], onDelete: Cascade)
   replyTo   Comment?      @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: Cascade)
   replies   Comment[]     @relation("ReplyTo")
   votes     CommentVote[]
@@ -214,20 +313,21 @@ model WeeklyView {
   @@index([chapterId])
 }
 
-model Notify {
-  id         Int        @id @default(autoincrement())
-  type       NotifyType
-  fromUserId String
-  toUserId   String
-  content    Json
-  isRead     Boolean    @default(false)
-  createdAt  DateTime   @default(now())
-  fromUser   User       @relation("fromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser     User       @relation("toUser", fields: [toUserId], references: [id], onDelete: Cascade)
+model History {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  mangaId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
 
-  @@index([fromUserId])
-  @@index([toUserId])
+  @@unique([userId, mangaId])
+  @@index([userId])
+  @@index([mangaId])
 }
+
+// Chat
 
 model Conversation {
   id        Int       @id @default(autoincrement())
@@ -249,18 +349,104 @@ model Message {
   @@index([senderId])
 }
 
-model History {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  mangaId   Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  manga     Manga    @relation(fields: [mangaId], references: [id])
+// Manage
 
-  @@unique([userId, mangaId])
+model Log {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+}
+
+// Forum
+
+model SubForum {
+  id            Int            @id @default(autoincrement())
+  title         String         @unique
+  banner        String?
+  canSend       Boolean        @default(true)
+  creatorId     String
+  createdAt     DateTime       @default(now())
+  posts         Post[]
+  subscriptions Subscription[]
+
+  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+  @@index([title])
+}
+
+model Subscription {
+  userId     String
+  subForumId Int
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subForum SubForum @relation(fields: [subForumId], references: [id], onDelete: Cascade)
+
+  @@id([userId, subForumId])
+}
+
+model Post {
+  id         Int           @id @default(autoincrement())
+  subForumId Int
+  title      String
+  content    Json
+  authorId   String
+  comments   PostComment[]
+  votes      PostVote[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  subForum SubForum @relation(fields: [subForumId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([subForumId])
+  @@index([authorId])
+}
+
+model PostComment {
+  id        Int               @id @default(autoincrement())
+  content   Json
+  oEmbed    Json?
+  createdAt DateTime          @default(now())
+  postId    Int
+  creatorId String
+  replyToId Int?
+  votes     PostCommentVote[]
+  replies   PostComment[]     @relation("ReplyToPost")
+
+  post    Post         @relation(fields: [postId], references: [id])
+  creator User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  replyTo PostComment? @relation("ReplyToPost", fields: [replyToId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([creatorId])
+  @@index([replyToId])
+}
+
+model PostVote {
+  userId String
+  postId Int
+  type   VoteType
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([userId, postId])
   @@index([userId])
-  @@index([mangaId])
+}
+
+model PostCommentVote {
+  userId        String
+  postCommentId Int
+  type          VoteType
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postComment PostComment @relation(fields: [postCommentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postCommentId])
+  @@index([userId, postCommentId])
+  @@index([userId])
 }
 
 enum VoteType {
@@ -274,4 +460,10 @@ enum NotifyType {
   MENTION
   FOLLOW
   SYSTEM
+}
+
+enum Role {
+  ADMIN
+  MOD
+  USER
 }

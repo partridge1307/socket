@@ -1,25 +1,30 @@
+import express from 'express';
+import http from 'http';
 import { Server } from 'socket.io';
+
+const app = express();
+const server = http.createServer(app);
 
 declare global {
   var cachedIo: Server;
 }
 
-let socket;
+let io: Server;
 if (process.env.ENV === 'production') {
-  socket = new Server({
+  io = new Server(server, {
     cors: {
       origin: process.env.URL,
     },
   });
 } else if (process.env.ENV === 'development') {
   if (!global.cachedIo) {
-    global.cachedIo = new Server({
+    global.cachedIo = new Server(server, {
       cors: {
         origin: process.env.URL,
       },
     });
   }
-  socket = global.cachedIo;
+  io = global.cachedIo;
 } else throw Error('Not found ENV');
 
-export const io = socket;
+export { app, io, server };
