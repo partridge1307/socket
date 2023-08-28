@@ -97,6 +97,7 @@ model User {
   postVote        PostVote[]
   postCommentVote PostCommentVote[]
   account         Account[]
+  discordChannel  DiscordChannel?
 
   @@index([followToId])
   @@index([email], type: Hash)
@@ -325,6 +326,18 @@ model History {
   @@unique([userId, mangaId])
   @@index([userId])
   @@index([mangaId])
+}
+
+model DiscordChannel {
+  userId      String  @unique
+  channelId   String
+  channelName String
+  roleId      String?
+  roleName    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // Chat
