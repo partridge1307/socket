@@ -16,16 +16,20 @@ const getAllChannelsCanSend = async (req: Request, res: Response) => {
     (c) => !!c.isTextBased() && c
   );
 
-  const textChannelsCanSend = textChannels.filter(async (c) => {
-    const botCanSendMessage = c
-      .permissionsFor(c.client.user)
-      ?.has(PermissionsBitField.Flags.SendMessages);
-    const isManager = (await c.guild.members.fetch(userId))
-      .permissionsIn(c)
-      .has(PermissionsBitField.Flags.ManageChannels);
+  const textChannelsCanSend = (
+    await Promise.all(
+      textChannels.map(async (c) => {
+        const botCanSendMessage = c
+          .permissionsFor(c.client.user)
+          ?.has(PermissionsBitField.Flags.SendMessages);
+        const isManager = (await c.guild.members.fetch(userId))
+          .permissionsIn(c)
+          .has(PermissionsBitField.Flags.ManageChannels);
 
-    if (botCanSendMessage && isManager) return c;
-  });
+        if (botCanSendMessage && isManager) return c;
+      })
+    )
+  ).filter((c) => c instanceof TextChannel) as TextChannel[];
 
   return res.json({
     channels: textChannelsCanSend.map((c) => ({ id: c.id, name: c.name })),
