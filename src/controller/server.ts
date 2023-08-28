@@ -12,13 +12,11 @@ const getAllChannelsCanSend = async (req: Request, res: Response) => {
   const guild = client.guilds.cache.get(id);
   if (!guild) return res.status(404).send('Not found');
 
-  const textChannels = guild.channels.cache.filter(
-    (c) => !!c.isTextBased() && c
-  );
+  const roles = guild.roles.cache.filter((role) => role.mentionable);
 
   const textChannelsCanSend = (
     await Promise.all(
-      textChannels.map(async (c) => {
+      guild.channels.cache.map(async (c) => {
         const botCanSendMessage = c
           .permissionsFor(c.client.user)
           ?.has(PermissionsBitField.Flags.SendMessages);
@@ -33,6 +31,7 @@ const getAllChannelsCanSend = async (req: Request, res: Response) => {
 
   return res.json({
     channels: textChannelsCanSend.map((c) => ({ id: c.id, name: c.name })),
+    roles: roles.map((role) => ({ id: role.id, name: role.name })),
   });
 };
 
@@ -73,8 +72,12 @@ const postChapterNotify = async (req: Request, res: Response) => {
   try {
     const decoded = verify(token, process.env.PUBLIC_KEY);
 
-    const { id, channelId } = z
-      .object({ id: z.number(), channelId: z.string() })
+    const { id, channelId, roleId } = z
+      .object({
+        id: z.number(),
+        channelId: z.string(),
+        roleId: z.string().nullish().optional(),
+      })
       .parse(decoded);
 
     const targetChapter = await db.chapter.findUniqueOrThrow({
@@ -101,7 +104,7 @@ const postChapterNotify = async (req: Request, res: Response) => {
       })
       .setTitle(targetChapter.manga.name)
       .setDescription(
-        `Volume ${targetChapter.volume} - Chapter ${targetChapter.chapterIndex} đã ra mắt`
+        `Vol. ${targetChapter.volume} Ch. ${targetChapter.chapterIndex} của ${targetChapter.manga.name} đã ra mắt`
       )
       .addFields([
         {
@@ -116,11 +119,15 @@ const postChapterNotify = async (req: Request, res: Response) => {
       channelId
     )) as TextChannel;
 
+    const content = !!roleId
+      ? `${process.env.URL}/chapter/${id}\n<@&${roleId}>`
+      : `${process.env.URL}/chapter/${id}`;
+
     await Promise.all([
-      targetChannel.send(`${process.env.URL}/chapter/${id}`),
       targetChannel.send({
         embeds: [embed],
       }),
+      targetChannel.send(content),
     ]);
 
     return res.send('OK');
