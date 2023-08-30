@@ -1,8 +1,9 @@
 import 'dotenv/config';
 import { handleMessage } from './controller/message';
+import handleNotify from './controller/notify';
 import { handleUserConnect, handleUserDisconnect } from './controller/user';
-import { io, server, app } from './lib/io';
 import client from './lib/discord';
+import { app, io, server } from './lib/io';
 import serverRoutes from './router/server';
 
 io.on('connection', (socket) => {
@@ -14,6 +15,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('message', (payload) => handleMessage(payload));
+
+  socket.on('notify', (payload) => handleNotify(payload, socket));
 });
 
 app.use('/api/v1/server', serverRoutes);

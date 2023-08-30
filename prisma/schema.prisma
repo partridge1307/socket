@@ -81,7 +81,6 @@ model User {
   manga           Manga[]
   memberOnTeam    MemberOnTeam?
   messages        Message[]
-  notifySent      Notify[]          @relation("fromUser")
   notifications   Notify[]          @relation("toUser")
   owner           Team?
   followTo        User?             @relation("followTo", fields: [followToId], references: [id])
@@ -114,17 +113,16 @@ model Badge {
 }
 
 model Notify {
-  id         Int        @id @default(autoincrement())
-  type       NotifyType
-  fromUserId String
-  toUserId   String
-  content    Json
-  isRead     Boolean    @default(false)
-  createdAt  DateTime   @default(now())
-  fromUser   User       @relation("fromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser     User       @relation("toUser", fields: [toUserId], references: [id], onDelete: Cascade)
+  id        Int        @id @default(autoincrement())
+  type      NotifyType
+  toUserId  String
+  content   String
+  endPoint  String
+  isRead    Boolean    @default(false)
+  createdAt DateTime   @default(now())
 
-  @@index([fromUserId])
+  toUser User @relation("toUser", fields: [toUserId], references: [id], onDelete: Cascade)
+
   @@index([toUserId])
 }
 
@@ -212,8 +210,7 @@ model MangaFollow {
   manga   Manga  @relation(fields: [mangaId], references: [id], onDelete: Cascade)
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([mangaId, userId])
-  @@index([mangaId, userId])
+  @@id([mangaId, userId])
 }
 
 model MangaAuthor {
@@ -374,6 +371,7 @@ model Log {
 
 model SubForum {
   id            Int            @id @default(autoincrement())
+  slug          String         @unique
   title         String         @unique
   banner        String?
   canSend       Boolean        @default(true)
@@ -468,7 +466,7 @@ enum VoteType {
 }
 
 enum NotifyType {
-  LIKE
+  CHAT
   COMMENT
   MENTION
   FOLLOW

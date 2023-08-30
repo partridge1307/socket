@@ -13,23 +13,28 @@ const getAllChannelsCanSend = async (req: Request, res: Response) => {
   if (!guild) return res.status(404).send('Not found');
 
   const user = await guild.members.fetch(userId);
-  if (!user.permissions.has(PermissionsBitField.Flags.ManageGuild))
-    return res.status(422).send('Invalid');
 
-  const roles = guild.roles.cache.filter((role) => role.mentionable);
+  let roles;
+  if (user.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+    roles = guild.roles.cache.filter((role) => role.mentionable);
+  }
 
   const textChannelsCanSend = guild.channels.cache.filter((c) => {
     const botCanSendMessage = c
       .permissionsFor(c.client.user)
       ?.has(PermissionsBitField.Flags.SendMessages);
 
-    if (botCanSendMessage && c instanceof TextChannel) return true;
+    const isManager = c
+      .permissionsFor(user)
+      .has(PermissionsBitField.Flags.ManageChannels);
+
+    if (botCanSendMessage && isManager && c instanceof TextChannel) return true;
     else return false;
   });
 
   return res.json({
     channels: textChannelsCanSend.map((c) => ({ id: c.id, name: c.name })),
-    roles: roles.map((role) => ({ id: role.id, name: role.name })),
+    roles: roles ? roles.map((role) => ({ id: role.id, name: role.name })) : [],
   });
 };
 

@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "nodemon --exec ts-node --swc ./src/app.ts",
     "build": "swc ./src -d ./dist",
-    "start": "node ./dist/app.js"
+    "start": "node ./dist/app.js",
+    "startProd": "pm2 start ./dist/app.js"
   },
   "keywords": [],
   "author": "",
