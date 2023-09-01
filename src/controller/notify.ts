@@ -107,6 +107,11 @@ const handleComment = async (
       select: {
         mangaId: true,
         authorId: true,
+        manga: {
+          select: {
+            slug: true,
+          },
+        },
       },
     });
     if (!comment) return;
@@ -118,7 +123,7 @@ const handleComment = async (
         type,
         toUserId: comment.authorId,
         content,
-        endPoint: `/manga/${comment.mangaId}`,
+        endPoint: `/manga/${comment.manga.slug}`,
       },
     });
 
@@ -192,6 +197,11 @@ const handleMention = async ({
       select: {
         authorId: true,
         mangaId: true,
+        manga: {
+          select: {
+            slug: true,
+          },
+        },
       },
     });
     if (!comment) return;
@@ -203,7 +213,7 @@ const handleMention = async ({
         type,
         toUserId: user.id,
         content,
-        endPoint: `/manga/${comment.mangaId}`,
+        endPoint: `/manga/${comment.manga.slug}`,
       })),
       skipDuplicates: true,
     });
