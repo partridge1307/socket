@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "nodemon --exec ts-node --swc ./src/app.ts",
     "build": "swc ./src -d ./dist",
+    "prestart": "prisma generate",
     "start": "node ./dist/app.js",
     "startProd": "pm2 start ./dist/app.js"
   },
