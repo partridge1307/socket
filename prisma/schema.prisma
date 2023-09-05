@@ -234,6 +234,7 @@ model Chapter {
   chapterIndex Float        @default(1)
   name         String?
   images       String[]
+  blurImages   String[]
   volume       Int
   mangaId      Int
   teamId       Int?
