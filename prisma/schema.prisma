@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearch"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -353,6 +352,8 @@ model History {
 
 model DiscordChannel {
   userId      String  @unique
+  serverId    String
+  serverName  String
   channelId   String
   channelName String
   roleId      String?
