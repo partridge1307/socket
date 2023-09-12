@@ -39,10 +39,6 @@ export default function handleNotify(payload: NotifyProps, socket: Socket) {
     const { type, id } = payload;
     return handleChat({ type, id, socket });
   }
-  if (payload.type === 'FOLLOW') {
-    const { type, id } = payload;
-    return handleFollow({ type, id });
-  }
 }
 
 const handleComment = async (
@@ -218,42 +214,6 @@ const handleMention = async ({
       skipDuplicates: true,
     });
   }
-};
-
-const handleFollow = async ({ type, id }: { type: NotifyType; id: number }) => {
-  const chapter = await db.chapter.findUnique({
-    where: {
-      id,
-    },
-    select: {
-      id: true,
-      manga: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  });
-  if (!chapter) return;
-
-  const usersFollow = await db.mangaFollow.findMany({
-    where: {
-      mangaId: chapter.manga.id,
-    },
-    select: {
-      userId: true,
-    },
-  });
-
-  await db.notify.createMany({
-    data: usersFollow.map((userFollow) => ({
-      type: 'FOLLOW',
-      toUserId: userFollow.userId,
-      content: `${chapter.manga.name} đã ra Chapter mới rồi đó`,
-      endPoint: `/chapter/${chapter.id}`,
-    })),
-  });
 };
 
 const handleChat = async ({

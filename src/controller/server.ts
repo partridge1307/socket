@@ -6,6 +6,18 @@ import { z } from 'zod';
 import { db } from '../lib/db';
 import client from '../lib/discord';
 
+const getServers = (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  const servers = client.guilds.cache.filter((guild) =>
+    guild.members.cache.has(userId)
+  );
+
+  return res
+    .status(200)
+    .json(servers.map((server) => ({ id: server.id, name: server.name })));
+};
+
 const getAllChannelsCanSend = async (req: Request, res: Response) => {
   const { id, userId } = req.params;
 
@@ -60,8 +72,9 @@ const commitChannel = async (req: Request, res: Response) => {
       name: 'Moetruyen',
     })
     .setTitle('Thông báo Manga')
-    .setDescription('Từ nay Mòe sẽ đặt kênh này làm kênh thông báo Manga')
-    .setURL(process.env.URL);
+    .setDescription('Từ nay Mòe sẽ đặt kênh này làm kênh thông báo Manga');
+
+  if (process.env.ENV === 'production') embed.setURL(process.env.URL);
 
   targetChannel.send({ embeds: [embed] });
 
@@ -93,6 +106,21 @@ const postChapterNotify = async (req: Request, res: Response) => {
             name: true,
             image: true,
             review: true,
+            view: {
+              select: {
+                totalView: true,
+              },
+            },
+            _count: {
+              select: {
+                mangaFollow: true,
+              },
+            },
+          },
+        },
+        team: {
+          select: {
+            name: true,
           },
         },
         chapterIndex: true,
@@ -107,16 +135,34 @@ const postChapterNotify = async (req: Request, res: Response) => {
       })
       .setTitle(targetChapter.manga.name)
       .setDescription(
-        `Vol. ${targetChapter.volume} Ch. ${targetChapter.chapterIndex} của \*\*${targetChapter.manga.name}\*\* đã ra mắt`
+        `Vol. ${targetChapter.volume} Ch. ${
+          targetChapter.chapterIndex
+        } của \*\*${
+          targetChapter.manga.name.charAt(0).toUpperCase() +
+          targetChapter.manga.name.slice(1)
+        }\*\* đã ra mắt`
       )
       .addFields([
+        {
+          name: 'Lượt xem',
+          value: `${targetChapter.manga.view?.totalView ?? 0}`,
+          inline: true,
+        },
+        {
+          name: 'Theo dõi',
+          value: `${targetChapter.manga._count.mangaFollow}`,
+          inline: true,
+        },
+        { name: 'Team', value: `${targetChapter.team?.name ?? 'Không có'}` },
         {
           name: 'Review',
           value: targetChapter.manga.review ?? 'Không có review',
         },
       ])
-      .setImage(targetChapter.manga.image)
-      .setURL(`${process.env.URL}/chapter/${id}`);
+      .setImage(targetChapter.manga.image);
+
+    if (process.env.ENV === 'production')
+      embed.setURL(`${process.env.URL}/chapter/${id}`);
 
     const targetChannel = (await client.channels.fetch(
       channelId
@@ -146,4 +192,4 @@ const postChapterNotify = async (req: Request, res: Response) => {
   }
 };
 
-export { commitChannel, getAllChannelsCanSend, postChapterNotify };
+export { commitChannel, getAllChannelsCanSend, postChapterNotify, getServers };
