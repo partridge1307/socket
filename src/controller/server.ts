@@ -136,9 +136,9 @@ const postChapterNotify = async (req: Request, res: Response) => {
       })
       .setTitle(targetChapter.manga.name)
       .setDescription(
-        `Vol. ${targetChapter.volume} Ch.${
+        `Vol. ${targetChapter.volume} Ch.${targetChapter.chapterIndex}${
           targetChapter.name ? ` - ${targetChapter.name}` : ''
-        } ${targetChapter.chapterIndex} của \*\*${
+        } của \*\*${
           targetChapter.manga.name.charAt(0).toUpperCase() +
           targetChapter.manga.name.slice(1)
         }\*\* đã ra mắt`
