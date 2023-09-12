@@ -123,6 +123,7 @@ const postChapterNotify = async (req: Request, res: Response) => {
             name: true,
           },
         },
+        name: true,
         chapterIndex: true,
         volume: true,
       },
@@ -135,9 +136,9 @@ const postChapterNotify = async (req: Request, res: Response) => {
       })
       .setTitle(targetChapter.manga.name)
       .setDescription(
-        `Vol. ${targetChapter.volume} Ch. ${
-          targetChapter.chapterIndex
-        } của \*\*${
+        `Vol. ${targetChapter.volume} Ch.${
+          targetChapter.name ? ` - ${targetChapter.name}` : ''
+        } ${targetChapter.chapterIndex} của \*\*${
           targetChapter.manga.name.charAt(0).toUpperCase() +
           targetChapter.manga.name.slice(1)
         }\*\* đã ra mắt`
