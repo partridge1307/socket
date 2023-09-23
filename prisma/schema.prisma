@@ -23,7 +23,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -34,7 +34,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id])
 
   @@index([sessionToken])
   @@index([userId])
@@ -121,7 +121,7 @@ model Notify {
   isRead    Boolean    @default(false)
   createdAt DateTime   @default(now())
 
-  toUser User @relation("toUser", fields: [toUserId], references: [id], onDelete: Cascade)
+  toUser User @relation("toUser", fields: [toUserId], references: [id])
 
   @@index([toUserId])
 }
@@ -132,7 +132,7 @@ model MemberOnTeam {
   userId String @unique
   teamId Int
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
 
   @@unique([userId, teamId])
   @@index([teamId])
@@ -161,7 +161,7 @@ model Team {
   createdAt       DateTime          @default(now())
   chapter         Chapter[]
   member          MemberOnTeam[]
-  owner           User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner           User              @relation(fields: [ownerId], references: [id])
   teamJoinRequest TeamJoinRequest[]
   dailyView       DailyView[]
   weeklyView      WeeklyView[]
@@ -202,7 +202,7 @@ model Manga {
   history      History[]
   mangaFollow  MangaFollow[]
 
-  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator User @relation(fields: [creatorId], references: [id])
 
   @@unique([name, creatorId])
   @@index([creatorId])
@@ -215,7 +215,7 @@ model MangaFollow {
   mangaId Int
   userId  String
   manga   Manga  @relation(fields: [mangaId], references: [id], onDelete: Cascade)
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id])
 
   @@id([mangaId, userId])
 }
@@ -265,7 +265,7 @@ model Comment {
   replies   Comment[]     @relation("ReplyTo")
   votes     CommentVote[]
 
-  author  User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author  User     @relation(fields: [authorId], references: [id])
   manga   Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
   chapter Chapter? @relation(fields: [chapterId], references: [id])
   replyTo Comment? @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: Cascade)
@@ -282,7 +282,7 @@ model CommentVote {
   type      VoteType
 
   comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
 
   @@id([userId, commentId])
   @@index([userId, commentId])
@@ -340,7 +340,7 @@ model History {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id])
   manga   Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
   chapter Chapter? @relation(fields: [chapterId], references: [id])
 
@@ -359,7 +359,7 @@ model DiscordChannel {
   roleId      String?
   roleName    String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -381,7 +381,7 @@ model Message {
   createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
 
   @@index([conversationId])
   @@index([senderId])
@@ -408,7 +408,7 @@ model SubForum {
   posts         Post[]
   subscriptions Subscription[]
 
-  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator User @relation(fields: [creatorId], references: [id])
 
   @@index([creatorId])
   @@index([title])
@@ -418,26 +418,28 @@ model SubForum {
 model Subscription {
   userId     String
   subForumId Int
+  isManager  Boolean @default(false)
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
   subForum SubForum @relation(fields: [subForumId], references: [id], onDelete: Cascade)
 
   @@id([userId, subForumId])
 }
 
 model Post {
-  id         Int           @id @default(autoincrement())
-  subForumId Int
-  title      String
-  content    Json
-  authorId   String
-  comments   PostComment[]
-  votes      PostVote[]
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id          Int           @id @default(autoincrement())
+  subForumId  Int
+  title       String
+  content     Json
+  description String
+  authorId    String
+  comments    PostComment[]
+  votes       PostVote[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   subForum SubForum @relation(fields: [subForumId], references: [id], onDelete: Cascade)
-  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id])
 
   @@index([subForumId])
   @@index([authorId])
@@ -454,8 +456,8 @@ model PostComment {
   votes     PostCommentVote[]
   replies   PostComment[]     @relation("ReplyToPost")
 
-  post    Post         @relation(fields: [postId], references: [id])
-  creator User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator User         @relation(fields: [creatorId], references: [id])
+  post    Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
   replyTo PostComment? @relation("ReplyToPost", fields: [replyToId], references: [id], onDelete: Cascade)
 
   @@index([postId])
@@ -468,7 +470,7 @@ model PostVote {
   postId Int
   type   VoteType
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
@@ -481,7 +483,7 @@ model PostCommentVote {
   postCommentId Int
   type          VoteType
 
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id])
   postComment PostComment @relation(fields: [postCommentId], references: [id], onDelete: Cascade)
 
   @@id([userId, postCommentId])
@@ -497,7 +499,6 @@ enum VoteType {
 enum NotifyType {
   CHAT
   COMMENT
-  MENTION
   FOLLOW
   SYSTEM
 }
